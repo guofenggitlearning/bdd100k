@@ -3,7 +3,7 @@
 '''
 creater      : PGF
 since        : 2024-10-17 16:13:27
-lastTime     : 2024-10-18 13:52:01
+lastTime     : 2024-10-18 17:54:23
 LastAuthor   : PGF
 message      : The function of this file is 
 文件相对于项目的路径   : /bdd100k/show_labels.py
@@ -37,8 +37,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--image", required=False,
                         help="input raw image", type=str)
-    parser.add_argument('--image-dir', type=str, default='/home/robot/open_dataset/lane_dataset/BDD100K/bdd100k/images/100k/val',help='image directory')
-    parser.add_argument("-l", "--label", default='/home/robot/open_dataset/lane_dataset/BDD100K/bdd100k/labels/100k/val',
+    parser.add_argument('--image-dir', type=str, default='/home/robot/open_dataset/lane_dataset/BDD100K/bdd100k/images/100k/train',help='image directory')
+    parser.add_argument("-l", "--label", default='/home/robot/open_dataset/lane_dataset/BDD100K/bdd100k/labels/100k/train',
                         help="corresponding bounding box annotation "
                              "(json file)", type=str)
     parser.add_argument('-s', '--scale', type=int, default=1,
@@ -556,6 +556,54 @@ class LabelViewer3(object):
 
         self.label = get_labels_path_list(self.label_paths)
 
+        # 统计scenes场景属性
+        self.scenes_weather = []
+        self.scenes_type = []
+        self.scenes_timeofday = []
+        self.scenes_other = []
+
+        # 统计标签相关信息（目标检测、语义分割和车道线检测）
+        self.obj_category = []
+        self.obj_attributes = []
+        self.obj_other = []
+
+        self.lane_category = []
+        self.lane_attributes_direction = []
+        self.lane_attributes_style = []
+        self.lane_other = []
+        
+        self.area_category = []
+        self.area_other = []
+        
+        self.other_class_list = []
+        self.other_attribute = []
+
+
+    def get_bdd100k_info(self):
+        '''
+        Prototype      : 
+        function message: The function of this function is 统计目标检测、语义分割和车道线检测相关信息，保存到txt文件中。
+        creater        : PGF
+        since          : 2024-10-18 14:25:31
+        Modification   : Create
+        Input           {*}
+        Output          {*}
+        '''
+        bdd100k_obj_info = {'object_info':[{'category':self.obj_category},{'attributes':self.obj_attributes},{'other':self.obj_other}]}
+        bdd100k_lane_info = {'lane_info':[{'category':self.lane_category},{'attributes':[{'direction':self.lane_attributes_direction},{'style':self.lane_attributes_style},{'other':self.lane_other}]}]}
+        bdd100k_area_info = {'area_info':[{'category':self.area_category},{'attributes':[]},{'other':self.area_other}]}
+        bdd100k_other_info = {'other_info':[{'category':self.other_class_list},{'attributes':self.other_attribute}]}
+
+        bdd100k_info = {'bdd100k':[{'object':bdd100k_obj_info},{'lane':bdd100k_lane_info},{'area':bdd100k_area_info},{'other':bdd100k_other_info}]}
+
+        # with open("./bdd100k_info.json","w") as f:
+        #     json.dump(bdd100k_info,f)
+        #     print("加载入文件完成...")
+
+        with open("./bdd100k_info.json", 'w') as write_f:
+            write_f.write(json.dumps(bdd100k_info, indent=4, ensure_ascii=False))
+
+
     def view(self):
         self.frame_index = 0
         if self.out_dir is None:
@@ -587,10 +635,10 @@ class LabelViewer3(object):
         self.start_index = 0
         self.frame_index = 0
         self.file_index = 0
-        while self.file_index < len(self.label_paths):
-            if self.label is None:
-                self.label = read_labels(self.label_paths[self.file_index])
-
+        while self.frame_index < len(self.label_paths):
+            if self.label is None: #get_labels_path_list(self.label_paths)
+                self.label = read_labels(get_labels_path_list(self.label_paths))
+  
             print('<---------->',self.frame_index,self.start_index)
             out_name = splitext(split(self.label[self.frame_index - self.start_index]['name'])[1])[0] + '.png'
             out_path = join(self.out_dir, out_name)
@@ -696,6 +744,18 @@ class LabelViewer3(object):
             self.draw_lanes(objects)
         if self.with_box2d:
             for b in get_boxes(objects):
+                
+                if b['category'] not in self.obj_category:
+                    self.obj_category.append(b['category'])
+                
+                for obj_bool_attr in list(b['attributes'].keys()):
+                    if [obj_bool_attr + ': True/False'] not in self.obj_attributes and obj_bool_attr in ['occluded','truncated']:
+                        self.obj_attributes.append([obj_bool_attr + ': True/False'])
+                    if [obj_bool_attr + ': Red/Green/Blue'] not in self.obj_attributes and obj_bool_attr in ['trafficLightColor']:
+                        self.obj_attributes.append([obj_bool_attr + ': Red/Green/Blue'])
+                    if obj_bool_attr not in ['occluded','truncated','trafficLightColor']:
+                        self.obj_other.append(obj_bool_attr)
+
                 attributes = {}
                 if 'attributes' in b:
                     attributes = b['attributes']
@@ -793,6 +853,14 @@ class LabelViewer3(object):
             self.ax.add_patch(self.poly2patch(
                     vertices, poly_type, poly_closed,
                     alpha=alpha, color=color))
+            
+            if obj['category'].split('/')[0] == 'area' and obj['category'] not in self.area_category:
+                self.area_category.append(obj['category'])
+            elif obj['category'].split('/')[0] != 'area':
+                self.area_other.append(obj['category'])
+            else:
+                print('*****done!')
+            
 
 
     def draw_lanes(self, objects):
@@ -825,6 +893,21 @@ class LabelViewer3(object):
             self.ax.add_patch(self.poly2patch(
                     vertices, poly_type, poly_closed,
                     alpha=alpha, color=color))
+            
+            if obj['category'].split('/')[0] == 'lane' and obj['category'] not in self.lane_category:
+                self.lane_category.append(obj['category'])
+            elif obj['category'].split('/')[0] != 'lane':
+                self.lane_other.append(obj['category'])
+
+            if obj['attributes']['direction'] not in self.lane_attributes_direction:
+                self.lane_attributes_direction.append(obj['attributes']['direction'])
+            else:
+                print('direction has saved!')
+
+            if obj['attributes']['style'] not in self.lane_attributes_style:
+                self.lane_attributes_style.append(obj['attributes']['style'])
+            else:
+                print('style has saved!')
 
     def draw_other_poly2d(self, objects):
         color_mode = self.color_mode
@@ -862,6 +945,11 @@ class LabelViewer3(object):
             self.ax.add_patch(self.poly2patch(
                 vertices, poly_types, closed=poly_closed,
                 alpha=alpha, color=color))
+            
+            if obj['category'] not in self.other_class_list:
+                self.other_class_list.append(obj['category'])
+            if obj['attributes'] not in self.other_attribute:
+                self.other_attribute.append(obj['attributes'])
 
     def box2rect(self, label_id, box2d):
         """generate individual bounding box from label"""
@@ -922,6 +1010,19 @@ class LabelViewer3(object):
         for k, v in attributes.items():
             attr_tag.write('{}: {}\n'.format(
                 k.rjust(key_width, ' '), v))
+            
+            if k == 'weather' and k not in self.scenes_weather:
+                self.scenes_weather.append(v)
+
+            if k == 'scene' and k not in self.scenes_type:
+                self.scenes_type.append(v)
+            if k == 'timeofday' and k not in self.scenes_timeofday:
+                self.scenes_timeofday.append(v)
+            elif k not in ['weather', 'scene', 'timeofday']:#可扩展
+                self.scenes_other.append(v)
+            else:
+                print('*** done!')
+
         attr_tag.seek(0)
         self.ax.text(
             25 * self.scale, 90 * self.scale, attr_tag.read()[:-1],
@@ -1353,6 +1454,7 @@ def main():
     else:
         viewer = LabelViewer3(args)
     viewer.view()
+    viewer.get_bdd100k_info()
 
 
 if __name__ == '__main__':
