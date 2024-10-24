@@ -1,26 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-'''
-creater      : PGF
-since        : 2024-10-21 15:25:03
-lastTime     : 2024-10-24 08:28:39
-LastAuthor   : PGF
-message      : The function of this file is 
-文件相对于项目的路径   : /bdd100k/main.py
-Copyright (c) 2024 by pgf email: nchu_pgf@163.com, All Rights Reserved.
-'''
-
-#!/usr/bin/env python
-# coding=utf-8
-'''
-creater      : PGF
-since        : 2024-05-13 08:52:40
-lastTime     : 2024-06-27 13:43:05
-LastAuthor   : PGF
-message      : The function of this file is 
-文件相对于项目的路径   : /data_process_project/main.py
-Copyright (c) 2024 by pgf email: nchu_pgf@163.com, All Rights Reserved.
-'''
 
 # -*- coding: utf8 -*-
 import os
