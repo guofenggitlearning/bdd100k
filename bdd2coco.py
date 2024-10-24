@@ -3,7 +3,7 @@
 '''
 creater      : PGF
 since        : 2024-10-17 16:13:27
-lastTime     : 2024-10-21 18:06:35
+lastTime     : 2024-10-22 14:11:35
 LastAuthor   : PGF
 message      : The function of this file is 
 文件相对于项目的路径   : /bdd100k/bdd2coco.py
@@ -31,24 +31,8 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def bdd2coco_detection(id_dict, labeled_images, fn):
-
-    attr_dict = dict()
-    attr_dict["categories"] = [
-        {"supercategory": "none", "id": 1, "name": "person"},
-        {"supercategory": "none", "id": 2, "name": "rider"},
-        {"supercategory": "none", "id": 3, "name": "car"},
-        {"supercategory": "none", "id": 4, "name": "bus"},
-        {"supercategory": "none", "id": 5, "name": "truck"},
-        {"supercategory": "none", "id": 6, "name": "bike"},
-        {"supercategory": "none", "id": 7, "name": "motor"},
-        {"supercategory": "none", "id": 8, "name": "traffic light"},
-        {"supercategory": "none", "id": 9, "name": "traffic sign"},
-        {"supercategory": "none", "id": 10, "name": "train"}
-    ]
-
-    attr_id_dict = {i['name']: i['id'] for i in attr_dict['categories']}
-
+def bdd2coco_detection(id_dict, attr_dict, labeled_images, fn):
+    
     images = list()
     annotations = list()
 
